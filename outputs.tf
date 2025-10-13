@@ -22,3 +22,9 @@ output "csi_token_secret" {
   value = split("=", proxmox_virtual_environment_user_token.kubernetes_csi.value)[1]
   sensitive = true
 }
+output "start_lb_address" {
+  value = cidrhost(cluster_node_network, cluster_node_network_load_balancer_first_hostnum)
+}
+output "stop_lb_address" {
+  value = cidrhost(cluster_node_network, cluster_node_network_load_balancer_last_hostnum))
+}

@@ -9,3 +9,7 @@ releases:
         repopassword: {{ requiredEnv "ARGO_GITREPO_PASSWORD"  }}
       cert_manager:
         api_token: {{ requiredEnv "CERT_MANAGER_API_TOKEN" }}
+      cilium:
+        loadbalancer:
+          startip: {{ readFile "../secret_start_lb_address" }}
+          startip: {{ readFile "../secret_stop_lb_address" }}
