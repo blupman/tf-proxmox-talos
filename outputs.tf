@@ -25,6 +25,7 @@ output "csi_token_secret" {
 output "start_lb_address" {
   value = cidrhost(cluster_node_network, cluster_node_network_load_balancer_first_hostnum)
 }
+
 output "stop_lb_address" {
-  value = cidrhost(cluster_node_network, cluster_node_network_load_balancer_last_hostnum))
+  value = cidrhost(cluster_node_network, cluster_node_network_load_balancer_last_hostnum)
 }
