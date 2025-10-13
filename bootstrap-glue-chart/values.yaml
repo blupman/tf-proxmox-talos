@@ -1,0 +1,16 @@
+# Default values for bootstrap-helm.
+# This is a YAML-formatted file.
+#
+#
+argo:
+  repourl: bla
+  repousername: test
+  repopassword: test
+
+cert_manager:
+  api_token: bla
+
+cilium:
+  loadbalancer:
+    startip: 10.0.0.80
+    stopip: 10.0.0.89

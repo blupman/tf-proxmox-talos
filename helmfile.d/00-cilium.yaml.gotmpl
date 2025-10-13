@@ -1,0 +1,62 @@
+repositories:
+- name: cilium
+  url: https://helm.cilium.io
+releases:
+- name: cilium
+  namespace: kube-system
+  chart: cilium/cilium
+  # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
+  version: "1.18.2"
+  values:
+    - ipam:
+        mode: "kubernetes"
+      securityContext:
+        capabilities:
+          ciliumAgent: 
+            - CHOWN
+            - KILL
+            - NET_ADMIN
+            - NET_RAW
+            - IPC_LOCK
+            - SYS_ADMIN
+            - SYS_RESOURCE
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+          cleanCiliumState:
+            - NET_ADMIN
+            - SYS_ADMIN
+            - SYS_RESOURCE
+      cgroup:
+        autoMount:
+          enabled: false
+        hostRoot: /sys/fs/cgroup
+        routingMode: native
+        ipv4NativeRoutingCIDR: 10.0.0.0/24
+        autoDirectNodeRoutes: true
+
+      k8sClientRateLimit:
+        qps: 50
+        burst: 100
+      k8sServiceHost: localhost
+      k8sServicePort: 7445
+      externalIPs:
+        enabled: true
+      kubeProxyReplacement: true
+      l2announcements:
+        enabled: true
+      devices: 
+       - eth0
+      ingressController:
+        enabled: false
+        default: true
+        loadbalancerMode: shared
+        enforceHttps: false
+      envoy:
+        enabled: true
+      hubble:
+        relay:
+          enabled: true
+        ui:
+          enabled: true

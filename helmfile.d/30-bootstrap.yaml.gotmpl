@@ -1,0 +1,11 @@
+releases:
+- name: bootstrap-glue
+  chart: ../bootstrap-glue-chart
+  namespace: argocd
+  values:
+    - argo:
+        repourl: {{ requiredEnv "ARGO_GITREPO_URL"  }}
+        repousername: {{ requiredEnv "ARGO_GITREPO_USERNAME"  }}
+        repopassword: {{ requiredEnv "ARGO_GITREPO_PASSWORD"  }}
+      cert_manager:
+        api_token: {{ requiredEnv "CERT_MANAGER_API_TOKEN" }}

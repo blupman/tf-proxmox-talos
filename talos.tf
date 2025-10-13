@@ -1,13 +1,13 @@
 locals {
   controller_nodes = [
     for i in range(var.controller_count) : {
-      name    = "c${i}"
+      name    = "${var.prefix}-c${i}"
       address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_controller_hostnum + i)
     }
   ]
   worker_nodes = [
     for i in range(var.worker_count) : {
-      name    = "w${i}"
+      name    = "${var.prefix}-w${i}"
       address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_worker_hostnum + i)
     }
   ]
@@ -32,19 +32,24 @@ locals {
           forwardKubeDNSToHost = true
         }
       }
-      kernel = {
-        modules = [
-          // piraeus dependencies.
-          {
-            name = "drbd"
-            parameters = [
-              "usermode_helper=disabled",
-            ]
-          },
-          {
-            name = "drbd_transport_tcp"
-          },
-        ]
+#      kernel = {
+#        modules = [
+#          // piraeus dependencies.
+#          {
+#            name = "drbd"
+#            parameters = [
+#              "usermode_helper=disabled",
+#            ]
+#          },
+#          {
+#            name = "drbd_transport_tcp"
+#          },
+#        ]
+#      }
+      nodeLabels = {
+        "proxmox.homelab.thuis" = "thuis"
+        "topology.kubernetes.io/zone" = var.proxmox_pve_node_name
+        "topology.kubernetes.io/region" = var.proxmox_pve_datacenter_name
       }
     }
     cluster = {
@@ -112,69 +117,6 @@ data "talos_machine_configuration" "controller" {
           ]
         }
       }
-    }),
-    yamlencode({
-      cluster = {
-        inlineManifests = [
-          {
-            name     = "spin"
-            contents = <<-EOF
-            apiVersion: node.k8s.io/v1
-            kind: RuntimeClass
-            metadata:
-              name: wasmtime-spin-v2
-            handler: spin
-            EOF
-          },
-          {
-            name = "cilium"
-            contents = join("---\n", [
-              data.helm_template.cilium.manifest,
-              "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
-            ])
-          },
-          {
-            name = "cert-manager"
-            contents = join("---\n", [
-              yamlencode({
-                apiVersion = "v1"
-                kind       = "Namespace"
-                metadata = {
-                  name = "cert-manager"
-                }
-              }),
-              data.helm_template.cert_manager.manifest,
-              "# Source cert-manager.tf\n${local.cert_manager_ingress_ca_manifest}",
-            ])
-          },
-          {
-            name     = "trust-manager"
-            contents = data.helm_template.trust_manager.manifest
-          },
-          {
-            name     = "reloader"
-            contents = data.helm_template.reloader.manifest
-          },
-          {
-            name     = "gitea"
-            contents = local.gitea_manifest
-          },
-          {
-            name = "argocd"
-            contents = join("---\n", [
-              yamlencode({
-                apiVersion = "v1"
-                kind       = "Namespace"
-                metadata = {
-                  name = local.argocd_namespace
-                }
-              }),
-              data.helm_template.argocd.manifest,
-              "# Source argocd.tf\n${local.argocd_manifest}",
-            ])
-          },
-        ],
-      },
     }),
   ]
 }

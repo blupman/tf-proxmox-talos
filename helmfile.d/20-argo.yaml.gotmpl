@@ -1,0 +1,29 @@
+repositories:
+- name: ghcr
+  url:  oci://ghcr.io/
+  oci: true
+
+  
+releases:
+- name: argocd
+  namespace: argocd
+  chart: oci://ghcr.io/argoproj/argo-helm/argo-cd
+  version: 8.5.8
+  values:
+    - global:
+        domain: argocd.k8s.nielsj.net
+      configs:
+        params:
+          server.insecure: true
+      server:
+        ingress:
+          enabled: true
+          ingressClassName: nginx
+          annotations:
+            nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+            nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+            cert-manager.io/cluster-issuer: cloudflare-niels-prod
+          extraTls:
+            - hosts:
+              - argocd.k8s.nielsj.net
+              secretName: argocd.k8s.nielsj.net

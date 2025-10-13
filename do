@@ -3,27 +3,23 @@ set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
 # renovate: datasource=github-releases depName=siderolabs/talos
-talos_version="1.10.6"
+talos_version="1.11.2"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/qemu-guest-agent
 # see https://github.com/siderolabs/extensions/tree/main/guest-agents/qemu-guest-agent
-talos_qemu_guest_agent_extension_tag="10.0.2@sha256:0d16cd4f8cefab33f091e336bc666943a71355ee010d0dfa0e46498693af1c52"
+talos_qemu_guest_agent_extension_tag="10.0.2@sha256:9720300de00544eca155bc19369dfd7789d39a0e23d72837a7188f199e13dc6c"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/drbd
 # see https://github.com/siderolabs/extensions/tree/main/storage/drbd
 # see https://github.com/LINBIT/drbd
-talos_drbd_extension_tag="9.2.14-v1.10.6@sha256:ca7fba878c5acb8fdfe130a39472a6c0a5c9dd74d65ba7507c09780a873b29c7"
+#talos_drbd_extension_tag="9.2.14-v1.11.0@sha256:3b9ca09718e77934e57b591bae2b29dbb44b2350e86694938713361f562b5b04"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/spin
 # see https://github.com/siderolabs/extensions/tree/main/container-runtime/spin
-talos_spin_extension_tag="v0.19.0@sha256:c88e8b1a6de4acd8d98f6aacc716c8e9aef3f7962d04893b49afc77d013b8ba2"
-
-# see https://github.com/piraeusdatastore/piraeus-operator/releases
-# renovate: datasource=github-releases depName=piraeusdatastore/piraeus-operator
-piraeus_operator_version="2.9.0"
+#talos_spin_extension_tag="v0.21.0@sha256:ebc4906e1ef003a0ed6f6ad2a64c575feeaf48d8b15e3e08f9e60df3c27c2bc9"
 
 export CHECKPOINT_DISABLE='1'
-export TF_LOG='DEBUG' # TRACE, DEBUG, INFO, WARN or ERROR.
+export TF_LOG='WARN' # TRACE, DEBUG, INFO, WARN or ERROR.
 export TF_LOG_PATH='terraform.log'
 
 export TALOSCONFIG=$PWD/talosconfig.yml
@@ -54,8 +50,6 @@ function update-talos-extensions {
   step "updating the talos extensions"
   local images="$(crane export "ghcr.io/siderolabs/extensions:v$talos_version" | tar x -O image-digests)"
   update-talos-extension talos_qemu_guest_agent_extension_tag ghcr.io/siderolabs/qemu-guest-agent "$images"
-  update-talos-extension talos_drbd_extension_tag ghcr.io/siderolabs/drbd "$images"
-  update-talos-extension talos_spin_extension_tag ghcr.io/siderolabs/spin "$images"
 }
 
 function build_talos_image {
@@ -82,8 +76,6 @@ input:
     imageRef: ghcr.io/siderolabs/installer:$talos_version_tag
   systemExtensions:
     - imageRef: ghcr.io/siderolabs/qemu-guest-agent:$talos_qemu_guest_agent_extension_tag
-    - imageRef: ghcr.io/siderolabs/drbd:$talos_drbd_extension_tag
-    - imageRef: ghcr.io/siderolabs/spin:$talos_spin_extension_tag
 output:
   kind: image
   imageOptions:
@@ -123,10 +115,12 @@ function apply {
   terraform apply tfplan
   terraform output -raw talosconfig >talosconfig.yml
   terraform output -raw kubeconfig >kubeconfig.yml
+  terraform output -raw csi_token_id >secret_csi_token_id
+  terraform output -raw csi_token_secret >secret_csi_token_secret
   health
-  piraeus-install
-  export-kubernetes-ingress-ca-crt
   info
+  sleep 3
+  KUBECONFIG=kubeconfig.yml helmfile apply -f helmfile.d/
 }
 
 function health {
@@ -140,107 +134,6 @@ function health {
     --worker-nodes $workers
 }
 
-function piraeus-install {
-  # see https://github.com/piraeusdatastore/piraeus-operator
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/how-to/talos.md
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/tutorial/get-started.md
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/tutorial/replicated-volumes.md
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/explanation/components.md
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/reference/linstorsatelliteconfiguration.md
-  # see https://github.com/piraeusdatastore/piraeus-operator/blob/v2.9.0/docs/reference/linstorcluster.md
-  # see https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/
-  # see https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-kubernetes
-  # see 5.7.1. Available Parameters in a Storage Class at https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-kubernetes-sc-parameters
-  # see https://linbit.com/drbd-user-guide/drbd-guide-9_0-en/
-  # see https://www.talos.dev/v1.10/kubernetes-guides/configuration/storage/#piraeus--linstor
-  step 'piraeus install'
-  kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v$piraeus_operator_version"
-  step 'piraeus wait'
-  kubectl wait pod --timeout=15m --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
-  step 'piraeus configure'
-  kubectl apply -n piraeus-datastore -f - <<'EOF'
-apiVersion: piraeus.io/v1
-kind: LinstorSatelliteConfiguration
-metadata:
-  name: talos-loader-override
-spec:
-  podTemplate:
-    spec:
-      initContainers:
-        - name: drbd-shutdown-guard
-          $patch: delete
-        - name: drbd-module-loader
-          $patch: delete
-      volumes:
-        - name: run-systemd-system
-          $patch: delete
-        - name: run-drbd-shutdown-guard
-          $patch: delete
-        - name: systemd-bus-socket
-          $patch: delete
-        - name: lib-modules
-          $patch: delete
-        - name: usr-src
-          $patch: delete
-        - name: etc-lvm-backup
-          hostPath:
-            path: /var/etc/lvm/backup
-            type: DirectoryOrCreate
-        - name: etc-lvm-archive
-          hostPath:
-            path: /var/etc/lvm/archive
-            type: DirectoryOrCreate
-EOF
-  kubectl apply -f - <<EOF
-apiVersion: piraeus.io/v1
-kind: LinstorCluster
-metadata:
-  name: linstor
-EOF
-  kubectl apply -f - <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-provisioner: linstor.csi.linbit.com
-metadata:
-  name: linstor-lvm-r1
-allowVolumeExpansion: true
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
-parameters:
-  csi.storage.k8s.io/fstype: xfs
-  linstor.csi.linbit.com/autoPlace: "1"
-  linstor.csi.linbit.com/storagePool: lvm
-EOF
-  step 'piraeus configure wait'
-  kubectl wait pod --timeout=15m --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/name=piraeus-datastore
-  kubectl wait LinstorCluster/linstor --timeout=15m --for=condition=Available
-  step 'piraeus create-device-pool'
-  local workers="$(terraform output -raw workers)"
-  local nodes=($(echo "$workers" | tr ',' ' '))
-  for ((n=0; n<${#nodes[@]}; ++n)); do
-    local node="w$((n))"
-    step "piraeus wait node $node"
-    while ! kubectl linstor storage-pool list --node "$node" >/dev/null 2>&1; do sleep 3; done
-    step "piraeus create-device-pool $node"
-    if ! kubectl linstor storage-pool list --node "$node" --storage-pool lvm | grep -q lvm; then
-      kubectl linstor physical-storage create-device-pool \
-        --pool-name lvm \
-        --storage-pool lvm \
-        lvm \
-        "$node" \
-        /dev/sdb
-    fi
-  done
-}
-
-function piraeus-info {
-  step 'piraeus node list'
-  kubectl linstor node list
-  step 'piraeus storage-pool list'
-  kubectl linstor storage-pool list
-  step 'piraeus volume list'
-  kubectl linstor volume list
-}
 
 function info {
   local controllers="$(terraform output -raw controllers)"
@@ -262,14 +155,6 @@ function info {
   done
   step 'kubernetes nodes'
   kubectl get nodes -o wide
-  piraeus-info
-}
-
-function export-kubernetes-ingress-ca-crt {
-  step 'export kubernetes-ingress-ca-crt.pem'
-  kubectl get -n cert-manager secret/ingress-tls -o jsonpath='{.data.tls\.crt}' \
-    | base64 -d \
-    > kubernetes-ingress-ca-crt.pem
 }
 
 function destroy {
