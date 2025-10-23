@@ -119,6 +119,7 @@ function apply {
   terraform output -raw csi_token_secret >secret_csi_token_secret
   terraform output -raw start_lb_address >secret_start_lb_address
   terraform output -raw stop_lb_address >secret_stop_lb_address
+  terraform output -raw argo_url >secret_argo_url
   health
   info
   sleep 3
