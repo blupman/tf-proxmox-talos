@@ -12,4 +12,4 @@ releases:
       cilium:
         loadbalancer:
           startip: {{ readFile "../secret_start_lb_address" }}
-          startip: {{ readFile "../secret_stop_lb_address" }}
+          stopip: {{ readFile "../secret_stop_lb_address" }}
