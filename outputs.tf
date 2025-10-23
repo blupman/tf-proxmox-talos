@@ -29,3 +29,7 @@ output "start_lb_address" {
 output "stop_lb_address" {
   value = cidrhost(var.cluster_node_network, var.cluster_node_network_load_balancer_last_hostnum)
 }
+
+output "argo_url" {
+  value = "argocd.${var.ingress_domain}"
+}
