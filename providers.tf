@@ -1,6 +1,6 @@
 # see https://github.com/hashicorp/terraform
 terraform {
-  required_version = "1.12.2"
+  required_version = "1.13.4"
   required_providers {
     # see https://registry.terraform.io/providers/hashicorp/random
     # see https://github.com/hashicorp/terraform-provider-random
@@ -44,6 +44,8 @@ terraform {
 provider "proxmox" {
   tmp_dir = "tmp"
   ssh {
+    agent    = true
+    username = "root"
     node {
       name    = var.proxmox_pve_node_name
       address = var.proxmox_pve_node_address
