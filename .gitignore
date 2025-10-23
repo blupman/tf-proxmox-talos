@@ -12,5 +12,6 @@ talosconfig.yml
 kubeconfig.yml
 kubernetes-ingress-ca-crt.pem
 tmp/
+tools/
 secret*
 secrets-proxmox.sh
