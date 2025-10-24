@@ -5,6 +5,7 @@ releases:
   values:
     - argo:
         repourl: {{ requiredEnv "ARGO_GITREPO_URL"  }}
+        repopath: {{ requiredEnv "ARGO_GITREPO_PATH"  }}
         repousername: {{ requiredEnv "ARGO_GITREPO_USERNAME"  }}
         repopassword: {{ requiredEnv "ARGO_GITREPO_PASSWORD"  }}
       cert_manager:

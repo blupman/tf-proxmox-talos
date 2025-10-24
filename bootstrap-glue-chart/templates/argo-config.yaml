@@ -31,4 +31,4 @@ spec:
   source:
     repoURL: {{ .Values.argo.repourl }}
     targetRevision: HEAD  # For Helm, this refers to the chart version.
-    path: argoapps-talos-home  # This has no meaning for Helm charts pulled directly from a Helm repo instead of git.
+    path: {{ .Values.argo.repopath }} 

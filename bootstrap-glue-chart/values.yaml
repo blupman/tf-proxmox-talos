@@ -4,6 +4,7 @@
 #
 argo:
   repourl: bla
+  repopath: argoapps-talos-home
   repousername: test
   repopassword: test
 

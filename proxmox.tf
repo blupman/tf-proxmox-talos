@@ -16,7 +16,7 @@ resource "proxmox_virtual_environment_vm" "controller" {
   name            = "${local.controller_nodes[count.index].name}"
   #name            = "${var.prefix}-${local.controller_nodes[count.index].name}"
   node_name       = var.proxmox_pve_node_name
-  tags            = sort(["talos", "controller", "example", "terraform"])
+  tags            = sort(["talos", "controller" ])
   stop_on_destroy = true
   bios            = "ovmf"
   machine         = "q35"
@@ -35,19 +35,19 @@ resource "proxmox_virtual_environment_vm" "controller" {
     type = "qxl"
   }
   network_device {
-    bridge  = "vmbr0"
-    vlan_id = 10
+    bridge  = var.node_proxmox_bridge
   }
   tpm_state {
     version = "v2.0"
+    datastore_id = var.node_datastore
   }
   efi_disk {
-    datastore_id = "zfsssd"
+    datastore_id = var.node_datastore
     file_format  = "raw"
     type         = "4m"
   }
   disk {
-    datastore_id = "zfsssd"
+    datastore_id = var.node_datastore
     interface    = "scsi0"
     iothread     = true
     ssd          = true
@@ -61,6 +61,7 @@ resource "proxmox_virtual_environment_vm" "controller" {
     trim    = true
   }
   initialization {
+    datastore_id = var.node_datastore
     ip_config {
       ipv4 {
         address = "${local.controller_nodes[count.index].address}/24"
@@ -76,7 +77,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   name            = "${local.worker_nodes[count.index].name}"
   #name            = "${var.prefix}-${local.worker_nodes[count.index].name}"
   node_name       = var.proxmox_pve_node_name
-  tags            = sort(["talos", "worker", "example", "terraform"])
+  tags            = sort(["talos", "worker"])
   stop_on_destroy = true
   bios            = "ovmf"
   machine         = "q35"
@@ -95,19 +96,19 @@ resource "proxmox_virtual_environment_vm" "worker" {
     type = "qxl"
   }
   network_device {
-    bridge  = "vmbr0"
-    vlan_id = 10
+    bridge  = var.node_proxmox_bridge
   }
   tpm_state {
     version = "v2.0"
+    datastore_id = var.node_datastore
   }
   efi_disk {
-    datastore_id = "zfsssd"
+    datastore_id = var.node_datastore
     file_format  = "raw"
     type         = "4m"
   }
   disk {
-    datastore_id = "zfsssd"
+    datastore_id = var.node_datastore
     interface    = "scsi0"
     iothread     = true
     ssd          = true
@@ -121,6 +122,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     trim    = true
   }
   initialization {
+    datastore_id = var.node_datastore
     ip_config {
       ipv4 {
         address = "${local.worker_nodes[count.index].address}/24"

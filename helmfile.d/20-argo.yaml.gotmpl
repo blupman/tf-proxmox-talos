@@ -11,7 +11,7 @@ releases:
   version: 8.5.8
   values:
     - global:
-        domain: argocd.k8s.nielsj.net
+        domain: {{ readFile "../secret_argo_url" }}
       configs:
         params:
           server.insecure: true
@@ -22,7 +22,7 @@ releases:
           annotations:
             nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
             nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-            cert-manager.io/cluster-issuer: cloudflare-niels-prod
+            cert-manager.io/cluster-issuer: letsencrypt
           extraTls:
             - hosts:
               - argocd.k8s.nielsj.net
