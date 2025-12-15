@@ -8,7 +8,7 @@ releases:
 - name: argocd
   namespace: argocd
   chart: oci://ghcr.io/argoproj/argo-helm/argo-cd
-  version: 8.5.8
+  version: 9.1.7
   values:
     - global:
         domain: {{ readFile "../secret_argo_url" }}
@@ -25,5 +25,5 @@ releases:
             cert-manager.io/cluster-issuer: letsencrypt
           extraTls:
             - hosts:
-              - argocd.k8s.nielsj.net
-              secretName: argocd.k8s.nielsj.net
+              - git.colokoe.net
+              secretName: git.colokoe.net
