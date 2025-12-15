@@ -18,11 +18,11 @@ releases:
         features: 
           provider: default
         clusters: 
-          - url: https://10.0.6.14:8006/api2/json
+          - url: {{ requiredEnv "PROXMOX_VE_ENDPOINT" }}api2/json
             insecure: true
             token_id: {{ readFile "../secret_csi_token_id" }}
             token_secret: {{ readFile "../secret_csi_token_secret" }}
-            region: "homelab"
+            region: {{ requiredEnv "PROXMOX_VE_CLUSTERNAME" }}
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
       tolerations:
@@ -36,12 +36,10 @@ releases:
       # Define storage classes
       # See https://pve.proxmox.com/wiki/Storage
       storageClass:
-        - name: proxmox-data-xfs
-          storage: zfsssd
-          reclaimPolicy: Delete
-          fstype: xfs
         - name: proxmox-data
-          storage: zfsssd
+          storage: local-zfs
           reclaimPolicy: Delete
           fstype: ext4
           cache: writethrough
+          annotations:
+            storageclass.kubernetes.io/is-default-class: "true"

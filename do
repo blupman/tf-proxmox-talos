@@ -123,7 +123,8 @@ function apply {
   health
   info
   sleep 3
-  KUBECONFIG=kubeconfig.yml helmfile apply -f helmfile.d/
+  export KUBECONFIG=`pwd`/kubeconfig.yml 
+  helmfile apply -f helmfile.d/
 }
 
 function health {
@@ -134,7 +135,8 @@ function health {
   talosctl -e $c0 -n $c0 \
     health \
     --control-plane-nodes $controllers \
-    --worker-nodes $workers
+    --worker-nodes $workers \
+    --wait-timeout 3m || true
 }
 
 

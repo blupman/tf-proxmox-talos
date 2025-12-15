@@ -29,7 +29,7 @@ resource "proxmox_virtual_environment_vm" "controller" {
     cores = 4
   }
   memory {
-    dedicated = 2 * 1024
+    dedicated = 4 * 1024
   }
   vga {
     type = "qxl"
@@ -90,7 +90,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     cores = 4
   }
   memory {
-    dedicated = 4 * 1024
+    dedicated = 8 * 1024
   }
   vga {
     type = "qxl"
