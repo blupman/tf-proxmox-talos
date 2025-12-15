@@ -12,7 +12,7 @@ releases:
         mode: "kubernetes"
       securityContext:
         capabilities:
-          ciliumAgent: 
+          ciliumAgent:
             - CHOWN
             - KILL
             - NET_ADMIN
@@ -46,10 +46,10 @@ releases:
       kubeProxyReplacement: true
       l2announcements:
         enabled: true
-      devices: 
+      devices:
        - eth0
       ingressController:
-        enabled: false
+        enabled: true
         default: true
         loadbalancerMode: shared
         enforceHttps: false
